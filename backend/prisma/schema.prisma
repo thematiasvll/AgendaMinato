@@ -4,6 +4,97 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+
+  id           Int      @id @default(autoincrement())
+
+  name         String
+
+  email        String   @unique
+
+  password     String
+
+  role         Role     @default(CLIENTE)
+
+  barberShop   BarberShop?
+
+  reservations Reservation[]
+
+  createdAt    DateTime @default(now())
+
+}
+
+model BarberShop {
+
+  id           Int      @id @default(autoincrement())
+
+  name         String
+
+  slug         String   @unique
+
+  description  String?
+
+  address      String?
+
+  phone        String?
+
+  logo         String?
+
+  ownerId      Int      @unique
+
+  owner        User     @relation(fields: [ownerId], references: [id])
+
+  barbers      Barber[]
+
+  createdAt    DateTime @default(now())
+
+}
+
+model Barber {
+
+  id             Int      @id @default(autoincrement())
+
+  name           String
+
+  specialty      String?
+
+  photo          String?
+
+  rating         Float    @default(0)
+
+  isAvailable    Boolean  @default(true)
+
+  barberShopId   Int
+
+  barberShop     BarberShop @relation(fields: [barberShopId], references: [id])
+
+  reservations   Reservation[]
+
+  createdAt      DateTime @default(now())
+
+}
+
+model Reservation {
+
+  id            Int      @id @default(autoincrement())
+
+  date          DateTime
+
+  status        ReservationStatus @default(PENDIENTE)
+
+  userId        Int
+
+  barberId      Int
+
+  user          User     @relation(fields: [userId], references: [id])
+
+  barber        Barber   @relation(fields: [barberId], references: [id])
+
+  createdAt     DateTime @default(now())
+
 }
 
 enum Role {
@@ -12,45 +103,9 @@ enum Role {
   CLIENTE
 }
 
-model User {
-  id          Int      @id @default(autoincrement())
-  name        String
-  email       String   @unique
-  password    String
-  role        Role     @default(CLIENTE)
-  createdAt   DateTime @default(now())
-
-  reservations Reservation[]
-}
-
-model Barber {
-  id          Int      @id @default(autoincrement())
-  name        String
-  photo       String?
-  available   Boolean  @default(true)
-
-  reservations Reservation[]
-}
-
-model Service {
-  id          Int      @id @default(autoincrement())
-  name        String
-  price       Int
-  duration    Int
-
-  reservations Reservation[]
-}
-
-model Reservation {
-  id          Int      @id @default(autoincrement())
-  date        DateTime
-  confirmed   Boolean  @default(false)
-
-  userId      Int
-  barberId    Int
-  serviceId   Int
-
-  user        User     @relation(fields: [userId], references: [id])
-  barber      Barber   @relation(fields: [barberId], references: [id])
-  service     Service  @relation(fields: [serviceId], references: [id])
+enum ReservationStatus {
+  PENDIENTE
+  CONFIRMADA
+  CANCELADA
+  COMPLETADA
 }
